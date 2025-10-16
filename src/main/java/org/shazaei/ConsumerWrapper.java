@@ -52,10 +52,10 @@ public class ConsumerWrapper<K, V> implements Closeable {
         this.kafkaConsumer = new KafkaConsumer<>(builder.props);
         this.tracker = new Tracker();
         this.records = new LinkedBlockingQueue<>(builder.capacity);
-        this.unAppliedAcks = new LinkedBlockingQueue<>(builder.capacity);
+        this.unAppliedAcks = new LinkedBlockingQueue<>();
         this.offsetCommitCallback = builder.offsetCommitCallback;
         this.assignedPartitionsToConsumer = new ArrayList<>();
-        this.maxPollExpiration = builder.maxPollExpiration;
+        this.maxPollExpiration = Integer.parseInt(builder.props.getProperty("max.poll.interval.ms"));
         this.listener = new ConsumerRebalanceListener() {
             @Override
             public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
@@ -182,13 +182,13 @@ public class ConsumerWrapper<K, V> implements Closeable {
     }
 
     public static class Builder<K, V> {
-        private final Properties props;
+        private Properties props;
         private OffsetCommitCallback offsetCommitCallback;
         private int capacity = 1000; // default capacity
-        private int maxPollExpiration = 300000; // default 5 min
 
-        public Builder(Properties props) {
+        public Builder<K, V> withProperties(Properties props) {
             this.props = props;
+            return this;
         }
 
         public Builder<K, V> withOffsetCommitCallback(OffsetCommitCallback callback) {
@@ -202,11 +202,6 @@ public class ConsumerWrapper<K, V> implements Closeable {
             return this;
         }
 
-        public Builder<K, V> withMaxPollExpiration(int maxPollExpiration) {
-            Validate.isTrue(maxPollExpiration > 0, "maxPollExpiration must be greater than 0");
-            this.maxPollExpiration = maxPollExpiration;
-            return this;
-        }
 
         public ConsumerWrapper<K, V> build() {
             if (offsetCommitCallback == null){
