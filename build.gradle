@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'ir.shazaei'
+group = 'org.shazaei'
 version = '1.0.0'
 
 repositories {
